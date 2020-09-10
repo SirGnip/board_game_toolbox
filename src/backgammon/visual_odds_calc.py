@@ -24,6 +24,14 @@ class HeaderButton(wx.Button):
         self.GetParent().refresh_odds(None)
 
 
+class GridCheckBox(wx.CheckBox):
+    """Wrapper around the CheckBox to hold its row/column"""
+    def __init__(self, parent, row_num, col_num):
+        wx.CheckBox.__init__(self, parent)
+        self.row_num = row_num
+        self.col_num = col_num
+
+
 class BackgammonFrame(wx.Frame):
     """Main window of backgammon odds calculator mini-app"""
     def __init__(self, *args, **kw):
@@ -31,9 +39,8 @@ class BackgammonFrame(wx.Frame):
 
         layout = wx.BoxSizer(wx.VERTICAL)
         grid_sizer = wx.GridSizer(cols=7)
-        layout.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, MARGIN)
 
-        self.ctrls = []
+        self.ctrls = []  # contains the button headers and grid of checkboxes
 
         # first header row
         row = []
@@ -53,11 +60,12 @@ class BackgammonFrame(wx.Frame):
             grid_sizer.Add(lbl)
             row.append(lbl)
             for col_idx in range(1, 7):
-                chk = wx.CheckBox(self)
-                chk.Bind(wx.EVT_CHECKBOX, self.refresh_odds)
+                chk = GridCheckBox(self, row_idx, col_idx)
+                chk.Bind(wx.EVT_CHECKBOX, self.on_check_grid)
                 grid_sizer.Add(chk)
                 row.append(chk)
             self.ctrls.append(row)
+        layout.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, MARGIN)
 
         # text view
         self.odds = wx.StaticText(self)
@@ -74,13 +82,19 @@ class BackgammonFrame(wx.Frame):
 
         self.refresh_odds(None)
 
-    def on_clear(self, _evt):
+    def on_clear(self, _event):
         for col_idx in range(1, 7):
             for row_idx in range(1, 7):
                 self.ctrls[row_idx][col_idx].SetValue(False)
         self.refresh_odds(None)
 
-    def refresh_odds(self, _evt):
+    def on_check_grid(self, event):
+        """mirror the check to the other side of the grid"""
+        chk = event.GetEventObject()
+        self.ctrls[chk.col_num][chk.row_num].SetValue(True)
+        self.refresh_odds(None)
+
+    def refresh_odds(self, _event):
         count = 0
         for col_idx in range(1, 7):
             for row_idx in range(1, 7):
