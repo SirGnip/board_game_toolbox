@@ -17,7 +17,8 @@ Mostly small, incomplete experiments with probability.  Not really meant for pub
 
     # run scripts
     python -m cant_stop.calculator
+    python -m backgammon.visual_odds_calc
     python -m risk.dice_roll_simulator
     
     # run linting
-    pylint src/ --disable=invalid-name --disable=line-too-long --disable=missing-function-docstring --disable=too-many-instance-attributes --disable=too-few-public-methods
+    pylint src/ --extension-pkg-whitelist=wx --disable=invalid-name --disable=line-too-long --disable=missing-function-docstring --disable=too-many-instance-attributes --disable=too-few-public-methods --disable=too-many-ancestors
