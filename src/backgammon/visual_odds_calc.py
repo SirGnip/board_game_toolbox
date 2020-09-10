@@ -1,7 +1,7 @@
 """Mini-app that provides a visual representation of the possible dice rolls in backgammon and the odds"""
 import wx
 
-HEADER_BTN_SIZE = wx.Size(20, 20)
+HEADER_BTN_SIZE = wx.Size(25, 25)
 MARGIN = 10
 
 
@@ -24,6 +24,21 @@ class HeaderButton(wx.Button):
         self.GetParent().refresh_odds(None)
 
 
+class RollTotalAutoButton(wx.Button):
+    """Wrapper around Button that auto-checks rolls that total up to given value"""
+    def __init__(self, parent, num):
+        wx.Button.__init__(self, parent, label=f"#{num}", size=HEADER_BTN_SIZE)
+        self.num = num
+
+    def on_click(self, _event):
+        ctrls = self.GetParent().ctrls
+        for row_num in range(1, 7):
+            for col_num in range(1, 7):
+                if row_num + col_num == self.num:
+                    ctrls[row_num][col_num].SetValue(True)
+        self.GetParent().refresh_odds(None)
+
+
 class GridCheckBox(wx.CheckBox):
     """Wrapper around the CheckBox to hold its row/column"""
     def __init__(self, parent, row_num, col_num):
@@ -37,12 +52,12 @@ class BackgammonFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
-        layout = wx.BoxSizer(wx.VERTICAL)
-        grid_sizer = wx.GridSizer(cols=7)
+        main_layout = wx.BoxSizer(wx.VERTICAL)
 
         self.ctrls = []  # contains the button headers and grid of checkboxes
 
-        # first header row
+        # first header row of grid
+        grid_sizer = wx.GridSizer(cols=7)
         row = []
         empty = wx.StaticText(self)
         grid_sizer.Add(empty, 1)
@@ -65,26 +80,34 @@ class BackgammonFrame(wx.Frame):
                 grid_sizer.Add(chk)
                 row.append(chk)
             self.ctrls.append(row)
-        layout.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, MARGIN)
+        main_layout.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, MARGIN)
 
-        # text view
+        # quick number buttons
+        quick_num_grid_sizer = wx.GridSizer(cols=6)
+        for num in range(2, 13):
+            btn = RollTotalAutoButton(self, num)
+            btn.Bind(wx.EVT_BUTTON, btn.on_click)
+            quick_num_grid_sizer.Add(btn)
+        main_layout.Add(quick_num_grid_sizer, 0, wx.EXPAND)
+
+        # text view of "odds"
         self.odds = wx.StaticText(self)
-        layout.Add(self.odds, 0, wx.ALL, MARGIN)
+        main_layout.Add(self.odds, 0, wx.ALL, MARGIN)
 
         # button
         clear_btn = wx.Button(self, label="Clear")
         clear_btn.Bind(wx.EVT_BUTTON, self.on_clear)
-        layout.Add(clear_btn, 0, wx.ALL | wx.CENTER, MARGIN)
+        main_layout.Add(clear_btn, 0, wx.ALL | wx.CENTER, MARGIN)
 
         # window setup
-        self.SetSizer(layout)
-        layout.SetSizeHints(self)
+        self.SetSizer(main_layout)
+        main_layout.SetSizeHints(self)
 
         self.refresh_odds(None)
 
     def on_clear(self, _event):
-        for col_idx in range(1, 7):
-            for row_idx in range(1, 7):
+        for row_idx in range(1, 7):
+            for col_idx in range(1, 7):
                 self.ctrls[row_idx][col_idx].SetValue(False)
         self.refresh_odds(None)
 
@@ -95,9 +118,10 @@ class BackgammonFrame(wx.Frame):
         self.refresh_odds(None)
 
     def refresh_odds(self, _event):
+        """Refresh the odds output"""
         count = 0
-        for col_idx in range(1, 7):
-            for row_idx in range(1, 7):
+        for row_idx in range(1, 7):
+            for col_idx in range(1, 7):
                 if self.ctrls[row_idx][col_idx].IsChecked():
                     count += 1
         pct = (count / 36) * 100
@@ -107,6 +131,6 @@ class BackgammonFrame(wx.Frame):
 
 if __name__ == '__main__':
     app = wx.App()
-    frm = BackgammonFrame(None, title="Backgammon Odds Calculator")
+    frm = BackgammonFrame(None, title="Backgammon Visual Odds Calculator")
     frm.Show()
     app.MainLoop()
