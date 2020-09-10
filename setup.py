@@ -27,5 +27,6 @@ setuptools.setup(
     install_requires=[
         # 3rd party dependencies
         "pylint==2.4.4",
+        "wxpython==4.1.0",
     ],
 )
