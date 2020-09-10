@@ -7,8 +7,9 @@ Mostly small, incomplete experiments with probability.  Not really meant for pub
 
 # How to install and run
 
-    # create virual environment
+    # create and activate virtual environment
     python -m venv venv
+    source venv/Scripts/activate
     
     # install to current environment (with current dir at top of repo) 
     pip install .     # "static" install
@@ -19,4 +20,4 @@ Mostly small, incomplete experiments with probability.  Not really meant for pub
     python -m risk.dice_roll_simulator
     
     # run linting
-    pylint src/ --disable=invalid-name --disable=line-too-long --disable=missing-function-docstring
+    pylint src/ --disable=invalid-name --disable=line-too-long --disable=missing-function-docstring --disable=too-many-instance-attributes --disable=too-few-public-methods

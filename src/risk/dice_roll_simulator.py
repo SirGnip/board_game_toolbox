@@ -1,162 +1,143 @@
-# Simulating percentages of a Risk-like dice roll competition
-
-import sys
+"""Simulating percentages of a Risk-like dice roll competition"""
 import random
 
 
-        
-class cPlayer:
-    def __init__(self, startArmies, preferredDiceToRoll):
-        #print "cPlayer.init"
-        #cPlayerStats.__init__(self)
-        self.armiesStart = startArmies
-        self.armiesCur = self.armiesStart
-        self.preferredDiceToRoll = preferredDiceToRoll
-        self.lastRoll = [] 
-        self.battlesPlayed = 0
-        self.battlesWon = 0
-        self.totalArmiesRemaining = 0
-        self.maxArmiesRemaining = 0
-        self.minArmiesRemaining = self.armiesStart
-        self.armiesKilled = 0
-        
-    def canContinue(self):
-        print("cPlayer.canContinue()")
+class Player:
+    """Player base class"""
+    def __init__(self, start_armies, preferred_dice_to_roll):
+        self.armies_start = start_armies
+        self.armies_cur = self.armies_start
+        self.preferred_dice_to_roll = preferred_dice_to_roll
+        self.last_roll = []
+        self.battles_played = 0
+        self.battles_won = 0
+        self.total_armies_remaining = 0
+        self.max_armies_remaining = 0
+        self.min_armies_remaining = self.armies_start
+        self.armies_killed = 0
+
+    def can_continue(self):
+        raise NotImplementedError
+
+    def num_dice_to_roll(self):
+        raise NotImplementedError
 
     def roll(self):
-        self.lastRoll = []
-        numToRoll = self.numDiceToRoll()
-        self.lastRoll = [random.randint(1, 6) for x in range(numToRoll)]        
-        self.lastRoll.sort()
-        self.lastRoll.reverse()
-        
-    def resolveRolls(self, defender):
-        diceMatches = min(len(self.lastRoll), len(defender.lastRoll))
-        for i in range(diceMatches):
-            if (defender.lastRoll[i] >= self.lastRoll[i]):
-                self.armiesCur -= 1
+        self.last_roll = []
+        count_to_roll = self.num_dice_to_roll()
+        self.last_roll = [random.randint(1, 6) for _ in range(count_to_roll)]
+        self.last_roll.sort()
+        self.last_roll.reverse()
+
+    def resolve_rolls(self, defender_player):
+        dice_matches = min(len(self.last_roll), len(defender.last_roll))
+        for i in range(dice_matches):
+            if defender_player.last_roll[i] >= self.last_roll[i]:
+                self.armies_cur -= 1
             else:
-                defender.armiesCur -= 1
-              
-##    def printStats(self, msg):
-##        print msg
-##        print self.lastRoll,
-##        print self.armiesCur
+                defender_player.armies_cur -= 1
 
     def reset(self):
-        self.lastRoll = []
-        self.armiesCur = self.armiesStart
+        self.last_roll = []
+        self.armies_cur = self.armies_start
 
-    def resetStats(self):
-        self.battlesPlayed = 0
-        self.battlesWon = 0
-        self.totalArmiesRemaining = 0
-        self.maxArmiesRemaining = 0
-        self.minArmiesRemaining = self.armiesStart
-        self.armiesKilled = 0
-#    def canContinue():       
-
+    def reset_stats(self):
+        self.battles_played = 0
+        self.battles_won = 0
+        self.total_armies_remaining = 0
+        self.max_armies_remaining = 0
+        self.min_armies_remaining = self.armies_start
+        self.armies_killed = 0
 
 
-class cAttacker(cPlayer):
-    def canContinue(self):
-        #print "cAttacker.canContinue()"
-        return (self.armiesCur > 1)
+class Attacker(Player):
+    """Player logic for when attacking"""
+    def can_continue(self):
+        return self.armies_cur > 1
 
-    def numDiceToRoll(self):
-        if (self.armiesCur > self.preferredDiceToRoll):
-            return self.preferredDiceToRoll
-        else:
-            return (self.armiesCur - 1)
-
-    
-class cDefender(cPlayer):
-    def canContinue(self):
-        #print "cDefender.canContinue()"
-        return (self.armiesCur > 0)
-
-    def numDiceToRoll(self):
-        if (self.armiesCur >= self.preferredDiceToRoll):
-            return self.preferredDiceToRoll
-        else:
-            return self.armiesCur
+    def num_dice_to_roll(self):
+        if self.armies_cur > self.preferred_dice_to_roll:
+            return self.preferred_dice_to_roll
+        return self.armies_cur - 1
 
 
-# a mock C "struct"
-class playerSpecs:
+class Defender(Player):
+    """Player logic for when defending"""
+    def can_continue(self):
+        return self.armies_cur > 0
+
+    def num_dice_to_roll(self):
+        if self.armies_cur >= self.preferred_dice_to_roll:
+            return self.preferred_dice_to_roll
+        return self.armies_cur
+
+
+class PlayerSpecs:
+    """Track values for each player"""
     armies = 0
     dice = 0
-    
-    
-def runSimulation(attValues, defValues, numberOfBattles, offset):
+
+
+def run_simulation(att_values, def_values, number_of_battles, defender_armies_offset):
     print()
-    totalRolls = 0
-    minRollsInBattle = 10000000
-    maxRollsInBattle = 0
-    attacker.armiesStart = attValues.armies
-    attacker.preferredDiceToRoll = attValues.dice
-    defender.armiesStart = defValues.armies + offset
-    defender.preferredDiceToRoll = defValues.dice
-    attacker.resetStats()
-    defender.resetStats()
+    total_rolls = 0
+    min_rolls_in_battle = 10000000
+    max_rolls_in_battle = 0
+    attacker.armies_start = att_values.armies
+    attacker.preferred_dice_to_roll = att_values.dice
+    defender.armies_start = def_values.armies + defender_armies_offset
+    defender.preferred_dice_to_roll = def_values.dice
+    attacker.reset_stats()
+    defender.reset_stats()
     print("Starting armies\t\tDesired dice")
-    print("Att: ", attacker.armiesStart, "\t\t", attacker.preferredDiceToRoll)
-    print("Def: ", defender.armiesStart, "\t\t", defender.preferredDiceToRoll)
-    for bat in range(numberOfBattles):
+    print("Att: ", attacker.armies_start, "\t\t", attacker.preferred_dice_to_roll)
+    print("Def: ", defender.armies_start, "\t\t", defender.preferred_dice_to_roll)
+    for _ in range(number_of_battles):
         attacker.reset()
         defender.reset()
-        #print attacker.armiesCur, defender.armiesCur
         roll = 0
-        while (attacker.canContinue() and defender.canContinue()):
+        while attacker.can_continue() and defender.can_continue():
             roll += 1
-            #print "-------#", roll
             attacker.roll()
             defender.roll()
-            #print attacker.lastRoll
-            #print defender.lastRoll
-            attacker.resolveRolls(defender)
-            #print attacker.armiesCur, defender.armiesCur
-            #print attacker.canContinue(), defender.canContinue()
-        totalRolls += roll
-        minRollsInBattle = min(minRollsInBattle, roll)
-        maxRollsInBattle = max(maxRollsInBattle, roll)
-        attacker.battlesPlayed += 1
-        defender.battlesPlayed += 1
-        attacker.armiesKilled += defender.armiesStart - defender.armiesCur
-        defender.armiesKilled += attacker.armiesStart - attacker.armiesCur
-        if attacker.canContinue():
-            attacker.battlesWon += 1
-            #print "ATTACKER!"
-        if defender.canContinue():
-            defender.battlesWon += 1
-            #print "DEFENDER!"
-        attacker.maxArmiesRemaining = max(attacker.maxArmiesRemaining, attacker.armiesCur)
-        attacker.minArmiesRemaining = min(attacker.minArmiesRemaining, attacker.armiesCur)
-        defender.maxArmiesRemaining = max(defender.maxArmiesRemaining, defender.armiesCur)
-        defender.minArmiesRemaining = min(defender.minArmiesRemaining, defender.armiesCur)
-        
-        attacker.totalArmiesRemaining += attacker.armiesCur
-        defender.totalArmiesRemaining += defender.armiesCur
-        #print attacker.armiesCur, defender.armiesCur
-        
-    print(attacker.battlesWon, "/", defender.battlesWon, " out of ", defender.battlesPlayed, "battles")
-    print("Attacker won", float(attacker.battlesWon) / attacker.battlesPlayed * 100, "%")
-    print("min/avg/max rolls:", minRollsInBattle, float(totalRolls) / numberOfBattles, maxRollsInBattle)
-    print("min/avg/max armies remaining att:", attacker.minArmiesRemaining, float(attacker.totalArmiesRemaining) / numberOfBattles, attacker.maxArmiesRemaining)
-    print("min/avg/max armies remaining def:", defender.minArmiesRemaining, float(defender.totalArmiesRemaining) / numberOfBattles, defender.maxArmiesRemaining)
-    print("attacker kill ratio:", attacker.armiesKilled, "/", defender.armiesKilled, float(attacker.armiesKilled) / defender.armiesKilled)
+            attacker.resolve_rolls(defender)
+        total_rolls += roll
+        min_rolls_in_battle = min(min_rolls_in_battle, roll)
+        max_rolls_in_battle = max(max_rolls_in_battle, roll)
+        attacker.battles_played += 1
+        defender.battles_played += 1
+        attacker.armies_killed += defender.armies_start - defender.armies_cur
+        defender.armies_killed += attacker.armies_start - attacker.armies_cur
+        if attacker.can_continue():
+            attacker.battles_won += 1
+        if defender.can_continue():
+            defender.battles_won += 1
+        attacker.max_armies_remaining = max(attacker.max_armies_remaining, attacker.armies_cur)
+        attacker.min_armies_remaining = min(attacker.min_armies_remaining, attacker.armies_cur)
+        defender.max_armies_remaining = max(defender.max_armies_remaining, defender.armies_cur)
+        defender.min_armies_remaining = min(defender.min_armies_remaining, defender.armies_cur)
+
+        attacker.total_armies_remaining += attacker.armies_cur
+        defender.total_armies_remaining += defender.armies_cur
+
+    print(attacker.battles_won, "/", defender.battles_won, " out of ", defender.battles_played, "battles")
+    print("Attacker won", float(attacker.battles_won) / attacker.battles_played * 100, "%")
+    print("min/avg/max rolls:", min_rolls_in_battle, float(total_rolls) / number_of_battles, max_rolls_in_battle)
+    print("min/avg/max armies remaining att:", attacker.min_armies_remaining, float(attacker.total_armies_remaining) / number_of_battles, attacker.max_armies_remaining)
+    print("min/avg/max armies remaining def:", defender.min_armies_remaining, float(defender.total_armies_remaining) / number_of_battles, defender.max_armies_remaining)
+    print("attacker kill ratio:", attacker.armies_killed, "/", defender.armies_killed, float(attacker.armies_killed) / defender.armies_killed)
 
 
 if __name__ == '__main__':
-    attacker = cAttacker(10, 3)
-    defender = cDefender(10, 2)
+    attacker = Attacker(10, 3)
+    defender = Defender(10, 2)
 
-    attack = playerSpecs()
-    defend = playerSpecs()
+    attack = PlayerSpecs()
+    defend = PlayerSpecs()
     attack.armies = 100
     attack.dice = 3
     defend.armies = 100
     defend.dice = 2
     numBattles = 100
-    for offset in range(-14, 14, 2):
-        runSimulation(attack, defend, numBattles, offset)
+    for army_offset in range(-14, 14, 2):
+        run_simulation(attack, defend, numBattles, army_offset)
