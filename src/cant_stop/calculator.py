@@ -4,6 +4,7 @@ A dice roll probability simulator for the board game: Can't Stop
 Given game pieces on a set of numbers, what is the chance that a dice roll will fail?
 """
 import random
+from multiprocessing import Pool
 
 
 class DicePair:
@@ -32,17 +33,20 @@ class DicePair:
         return f"{self.a} {self.b} {self.c} {self.d}"
 
 
-def run(numbers):
-    rolls = 1_000_000
+def do_multiple_rolls(set_of_numbers, num_of_rolls):
+    """Given the set of numbers your pieces are on, do multiple rolls and see how many failures you would get"""
     failure_count = 0
     p = DicePair()
-    for _ in range(rolls):
+    for _ in range(num_of_rolls):
         p.roll()
         roll_groups = p.get_groups()
-        fail = numbers.isdisjoint(roll_groups)
+        fail = set_of_numbers.isdisjoint(roll_groups)
         if fail:
             failure_count += 1
+    return num_of_rolls, failure_count
 
+
+def print_summary(numbers, rolls, failure_count):
     success_percent = (rolls-failure_count)/rolls
     print(f"playing these numbers {numbers}")
     print(f"{failure_count} out of {rolls} rolls resulted in failure. ({success_percent*100:.2f}% success rate)")
@@ -51,6 +55,23 @@ def run(numbers):
     for attempt in range(1, 8):
         print(f"Going for {attempt} attempt(s) would carry a {cur_percent*100:.2f}% success rate")
         cur_percent = success_percent * cur_percent
+
+
+def run(numbers):
+    procs = 8
+    count = 1_000_000
+    with Pool(processes=procs) as pool:
+        jobs = []
+        for num in range(procs):
+            job = pool.apply_async(do_multiple_rolls, (numbers, count // procs))
+            jobs.append(job)
+        ttl_rolls = 0
+        ttl_failures = 0
+        for j in jobs:
+            rolls, failures = j.get()
+            ttl_rolls += rolls
+            ttl_failures += failures
+    print_summary(numbers, ttl_rolls, ttl_failures)
 
 
 if __name__ == '__main__':
