@@ -7,7 +7,7 @@ import random
 from multiprocessing import Pool
 
 
-class DicePair:
+class FourDice:
     """Represent the four dice in Can't Stop"""
     def __init__(self):
         self.a, self.b, self.c, self.d = (0, 0, 0, 0)
@@ -36,7 +36,7 @@ class DicePair:
 def do_multiple_rolls(set_of_numbers, num_of_rolls):
     """Given the set of numbers your pieces are on, do multiple rolls and see how many failures you would get"""
     failure_count = 0
-    p = DicePair()
+    p = FourDice()
     for _ in range(num_of_rolls):
         p.roll()
         roll_groups = p.get_groups()
@@ -46,9 +46,9 @@ def do_multiple_rolls(set_of_numbers, num_of_rolls):
     return num_of_rolls, failure_count
 
 
-def print_summary(numbers, rolls, failure_count):
+def print_summary(players_numbers, rolls, failure_count):
     success_percent = (rolls-failure_count)/rolls
-    print(f"playing these numbers {numbers}")
+    print(f"playing these numbers {players_numbers}")
     print(f"{failure_count} out of {rolls} rolls resulted in failure. ({success_percent*100:.2f}% success rate)")
 
     cur_percent = success_percent
@@ -57,13 +57,13 @@ def print_summary(numbers, rolls, failure_count):
         cur_percent = success_percent * cur_percent
 
 
-def run(numbers):
+def run(players_numbers):
     procs = 8
     count = 1_000_000
     with Pool(processes=procs) as pool:
         jobs = []
         for num in range(procs):
-            job = pool.apply_async(do_multiple_rolls, (numbers, count // procs))
+            job = pool.apply_async(do_multiple_rolls, (players_numbers, count // procs))
             jobs.append(job)
         ttl_rolls = 0
         ttl_failures = 0
@@ -71,13 +71,15 @@ def run(numbers):
             rolls, failures = j.get()
             ttl_rolls += rolls
             ttl_failures += failures
-    print_summary(numbers, ttl_rolls, ttl_failures)
+    print_summary(players_numbers, ttl_rolls, ttl_failures)
 
 
 if __name__ == '__main__':
     while True:
         print()
-        resp = input("Enter numbers that have pieces on them (separated by spaces): ")
+        resp = input("Enter the numbers, separated by spaces, that have game pieces on them (enter nothing to exit): ")
+        if len(resp.strip()) == 0:
+            break
         tokens = resp.split()
-        set_of_nums = {int(n) for n in tokens}
-        run(set_of_nums)
+        set_of_player_nums = {int(n) for n in tokens}
+        run(set_of_player_nums)
