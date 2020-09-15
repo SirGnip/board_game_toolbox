@@ -113,8 +113,8 @@ class BackgammonFrame(wx.Frame):
 
     def on_check_grid(self, event):
         """mirror the check to the other side of the grid"""
-        chk = event.GetEventObject()
-        self.ctrls[chk.col_num][chk.row_num].SetValue(True)
+        chk = event.GetEventObject()  # EventObject has already had its value toggled from the click click
+        self.ctrls[chk.col_num][chk.row_num].SetValue(chk.GetValue())  # set same state to mirrored control
         self.refresh_odds(None)
 
     def refresh_odds(self, _event):
